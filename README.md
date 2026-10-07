@@ -33,8 +33,8 @@ Sigue estos pasos para levantar el entorno completo de forma local:
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/tu-usuario/sql-python-analytics-ventas.git
-cd sql-python-analytics-ventas
+git clone https://github.com/Dmgar/corporate-bi-dashboard.git
+cd corporate-bi-dashboard
 ```
 
 ### 2. Crear un Entorno Virtual y Activar
