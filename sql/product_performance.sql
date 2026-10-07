@@ -1,11 +1,11 @@
 SELECT 
-    p.category,
-    p.product_name,
-    SUM(s.quantity) as items_sold,
-    SUM(s.revenue) as total_revenue,
-    SUM(s.profit) as total_profit,
-    (SUM(s.profit) / SUM(s.revenue)) * 100 as margin_percentage
-FROM sales s
-JOIN products p ON s.product_id = p.product_id
-GROUP BY p.category, p.product_name
+    category,
+    product_name,
+    SUM(quantity) as items_sold,
+    SUM(revenue) as total_revenue,
+    SUM(profit) as total_profit,
+    (SUM(profit) / SUM(revenue)) * 100 as margin_percentage,
+    RANK() OVER (PARTITION BY category ORDER BY SUM(profit) DESC) as category_rank
+FROM data_table
+GROUP BY category, product_name
 ORDER BY total_profit DESC;
