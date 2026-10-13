@@ -46,16 +46,31 @@ def generate_data(num_sales=50000):
     df_products = pd.DataFrame(products)
     print(f"Generados {len(df_products)} productos.")
     
-    # 2. Stores / Channels
+    # 2. Stores / Channels / Geolocation
     stores = []
-    regions = ['Norte', 'Sur', 'Centro', 'Occidente', 'Oriente']
-    for i in range(1, 11):
-        is_online = random.random() > 0.7 # 30% online
+    store_catalog = [
+        {'country': 'México', 'country_code': 'MEX', 'region': 'Norte', 'city': 'Ciudad de México', 'lat': 19.4326, 'lon': -99.1332},
+        {'country': 'Colombia', 'country_code': 'COL', 'region': 'Centro', 'city': 'Bogotá', 'lat': 4.7110, 'lon': -74.0721},
+        {'country': 'España', 'country_code': 'ESP', 'region': 'Oriente', 'city': 'Madrid', 'lat': 40.4168, 'lon': -3.7038},
+        {'country': 'Argentina', 'country_code': 'ARG', 'region': 'Sur', 'city': 'Buenos Aires', 'lat': -34.6037, 'lon': -58.3816},
+        {'country': 'Chile', 'country_code': 'CHL', 'region': 'Sur', 'city': 'Santiago', 'lat': -33.4489, 'lon': -70.6693},
+        {'country': 'Perú', 'country_code': 'PER', 'region': 'Occidente', 'city': 'Lima', 'lat': -12.0464, 'lon': -77.0428},
+        {'country': 'Estados Unidos', 'country_code': 'USA', 'region': 'Norte', 'city': 'Miami', 'lat': 25.7617, 'lon': -80.1918},
+        {'country': 'Brasil', 'country_code': 'BRA', 'region': 'Oriente', 'city': 'São Paulo', 'lat': -23.5505, 'lon': -46.6333},
+        {'country': 'México', 'country_code': 'MEX', 'region': 'Centro', 'city': 'Guadalajara', 'lat': 20.6597, 'lon': -103.3496},
+        {'country': 'Colombia', 'country_code': 'COL', 'region': 'Occidente', 'city': 'Medellín', 'lat': 6.2442, 'lon': -75.5812},
+    ]
+    for i, meta in enumerate(store_catalog, start=1):
+        is_online = random.random() > 0.7  # 30% online
         stores.append({
             'store_id': i,
             'channel': 'Online' if is_online else 'Offline',
-            'region': random.choice(regions),
-            'city': fake.city() if not is_online else 'Digital'
+            'region': meta['region'],
+            'country': meta['country'],
+            'country_code': meta['country_code'],
+            'city': 'Digital' if is_online else meta['city'],
+            'lat': meta['lat'],
+            'lon': meta['lon']
         })
     df_stores = pd.DataFrame(stores)
     print(f"Generadas {len(df_stores)} tiendas.")

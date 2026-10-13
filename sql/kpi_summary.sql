@@ -4,5 +4,5 @@ SELECT
     SUM(profit) as total_profit,
     COUNT(*) as total_transactions,
     AVG(profit) as avg_profit_per_txn,
-    (SUM(profit) / SUM(revenue)) * 100 as overall_margin
+    COALESCE((SUM(profit) / NULLIF(SUM(revenue), 0)) * 100, 0) as overall_margin
 FROM data_table;

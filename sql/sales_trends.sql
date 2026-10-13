@@ -1,6 +1,6 @@
 WITH monthly_data AS (
     SELECT 
-        strftime(date, '%Y-%m') as month,
+        strftime(CAST(date AS DATE), '%Y-%m') as month,
         SUM(revenue) as total_revenue,
         SUM(profit) as total_profit
     FROM data_table
