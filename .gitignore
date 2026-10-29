@@ -209,3 +209,12 @@ __marimo__/
 # Local Databases
 data/*.db
 data/*.sqlite
+
+# Local Agent & DevOps Directives (Privado en Laptop)
+GEMINI.md
+AGENTS.md
+.opencode/
+.opencode.json
+opencode.json
+.env
+.env.*
