@@ -1,5 +1,8 @@
 import pytest
 import pandas as pd
+import sqlite3
+import os
+from pathlib import Path
 from src.db_client import DBClient
 
 def test_db_client_instantiation() -> None:
@@ -49,3 +52,15 @@ def test_defensive_schema_normalization() -> None:
     assert res["total_revenue"].iloc[0] == 1500.0
     assert res["total_cost"].iloc[0] == 900.0
     assert res["total_profit"].iloc[0] == 600.0
+
+def test_db_client_invalid_path(tmp_path: Path) -> None:
+    """A nonexistent DB path must fail on access, not silently return data."""
+    invalid_db_path = tmp_path / "missing_dir" / "sales_database.db"
+    client = DBClient(db_path=str(invalid_db_path))
+
+    assert client.db_path == os.path.abspath(str(invalid_db_path))
+    assert not os.path.exists(client.db_path)
+
+    with pytest.raises(sqlite3.OperationalError):
+        client.get_default_data()
+
