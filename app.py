@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from typing import Optional, Any
 from src.db_client import DBClient
 
 # Importación de Componentes Modulares Avanzados
@@ -61,11 +62,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_default_data():
+def load_default_data() -> pd.DataFrame:
     client = DBClient()
     return client.get_default_data()
 
-def process_file(uploaded_file):
+def process_file(uploaded_file: Any) -> Optional[pd.DataFrame]:
     """Carga y normaliza archivos subidos por el usuario de manera inteligente."""
     try:
         if uploaded_file.name.endswith('.csv'):
@@ -111,7 +112,11 @@ def process_file(uploaded_file):
         
     return df
 
-def render_insights(trends_df, products_df, kpi_df):
+def render_insights(
+    trends_df: Optional[pd.DataFrame],
+    products_df: Optional[pd.DataFrame],
+    kpi_df: Optional[pd.DataFrame]
+) -> None:
     st.subheader(":material/lightbulb: Inteligencia de Negocio & Oportunidades")
     
     col1, col2 = st.columns(2)
@@ -142,7 +147,7 @@ def render_insights(trends_df, products_df, kpi_df):
             opp_product = low_margin_products.sort_values('total_revenue', ascending=False).iloc[0]
             st.warning(f"**Oportunidad de Optimización:** El producto **{opp_product['product_name']}** tiene un altísimo volumen de ingresos (${opp_product['total_revenue']:,.2f}), pero su margen de rentabilidad ({opp_product['margin_percentage']:.1f}%) está por debajo del promedio del negocio ({avg_margin:.1f}%). Evalúa renegociar con proveedores o realizar un ajuste ligero de precio para disparar tus ganancias.", icon=":material/tips_and_updates:")
 
-def main():
+def main() -> None:
     # Encabezado Principal y Branding
     st.title(":material/insights: Corporate BI Studio · Analytics Avanzado")
     st.markdown("Plataforma interactiva de inteligencia comercial y toma de decisiones corporativas.")

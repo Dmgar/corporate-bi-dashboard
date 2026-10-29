@@ -4,15 +4,15 @@ import duckdb
 import os
 
 class DBClient:
-    def __init__(self, db_path="data/sales_database.db"):
-        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', db_path))
+    def __init__(self, db_path: str = "data/sales_database.db") -> None:
+        self.db_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', db_path))
 
-    def _read_sql_file(self, filename):
+    def _read_sql_file(self, filename: str) -> str:
         filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'sql', filename))
         with open(filepath, 'r', encoding='utf-8') as f:
             return f.read()
 
-    def get_default_data(self):
+    def get_default_data(self) -> pd.DataFrame:
         """Loads data from the default SQLite db into a flattened Pandas DataFrame."""
         conn = sqlite3.connect(self.db_path)
         
@@ -71,7 +71,7 @@ class DBClient:
 
         return df
 
-    def execute_advanced_query(self, sql_filename, df):
+    def execute_advanced_query(self, sql_filename: str, df: pd.DataFrame) -> pd.DataFrame:
         """Executes a DuckDB query over the given dataframe 'df' with defensive schema normalization."""
         if df is None or df.empty:
             return pd.DataFrame()
