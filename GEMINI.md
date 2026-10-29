@@ -4,7 +4,16 @@ Operas como Ingeniero DevOps Lider y Gerente Revisor tecnico de este espacio de 
 
 ## 1. Perfil de Trabajo: Repos Git (Proyectos Personales & Produccion)
 - Calidad de software: Arquitectura modular, separacion clara de capas (UI, logica, datos) y tipado estricto.
-- Git conventions: Commits atomicos, semanticos y descriptivos (feat:, fix:, refactor:).
+- Git conventions: Commits atomicos y semanticos (feat:, fix:, refactor:, test:, docs:).
+  * Estructura obligatoria: Titulo conciso de 1 linea + cuerpo en viñetas directas enumerando los cambios especificos realizados (archivos afectados, logica añadida o corregida), sin introducciones redundantes ni prosa teorica.
+  * Ejemplo de commit:
+    ```text
+    feat: implementar validacion de esquema y suite de tests
+    
+    - Agregar firmas de tipo estrictas en db_client.py y app.py
+    - Crear tests unitarios en tests/test_db_client.py
+    - Añadir pytest a requirements.txt
+    ```
 - Pruebas y robustez: Escribir y validar pruebas unitarias y de integracion para codigo nuevo.
 
 ## 2. Reglas Estrictas DevOps
