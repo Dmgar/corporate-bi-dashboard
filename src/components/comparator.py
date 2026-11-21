@@ -1,10 +1,8 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 
-def render_comparator_analytics(df: pd.DataFrame, profiler_info: dict):
+def render_comparator_analytics(df: pd.DataFrame, profiler_info: dict) -> None:
     st.subheader(":material/balance: Comparadores Multidimensionales & Benchmarking")
     st.markdown("Compara períodos históricos para medir crecimiento o enfrenta dos productos, canales o regiones para identificar ventajas competitivas.")
 
@@ -140,7 +138,7 @@ def render_comparator_analytics(df: pd.DataFrame, profiler_info: dict):
                             color_discrete_sequence=['#118DFF', '#A0AEC0']
                         )
                         fig_bars.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                        st.plotly_chart(fig_bars, use_container_width=True)
+                        st.plotly_chart(fig_bars, width="stretch")
 
                     with col_chart_comp2:
                         st.markdown(f"**Variación Neta ($) por {cat_col.title()}**")
@@ -155,7 +153,7 @@ def render_comparator_analytics(df: pd.DataFrame, profiler_info: dict):
                             template='plotly_white'
                         )
                         fig_diff.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                        st.plotly_chart(fig_diff, use_container_width=True)
+                        st.plotly_chart(fig_diff, width="stretch")
 
     # ===============================================
     # TAB 2: COMPARADOR DE ENTIDADES / BENCHMARKING
@@ -250,7 +248,7 @@ def render_comparator_analytics(df: pd.DataFrame, profiler_info: dict):
         col_sc_tbl, col_sc_chart = st.columns([3, 2])
         with col_sc_tbl:
             st.markdown(f"**Scorecard Comparativo: {ent_a} vs {ent_b}**")
-            st.dataframe(score_df, use_container_width=True, hide_index=True)
+            st.dataframe(score_df, width="stretch", hide_index=True)
 
         with col_sc_chart:
             st.markdown("**Comparativa Visual Normalizada (Base 100)**")
@@ -274,7 +272,7 @@ def render_comparator_analytics(df: pd.DataFrame, profiler_info: dict):
                 color_discrete_sequence=['#118DFF', '#E66C37']
             )
             fig_norm.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig_norm, use_container_width=True)
+            st.plotly_chart(fig_norm, width="stretch")
 
         # Veredicto Ejecutivo Inteligente
         st.divider()

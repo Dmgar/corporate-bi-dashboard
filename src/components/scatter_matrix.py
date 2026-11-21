@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-def render_scatter_analytics(df: pd.DataFrame, profiler_info: dict):
+def render_scatter_analytics(df: pd.DataFrame, profiler_info: dict) -> None:
     st.subheader(":material/scatter_plot: Análisis de Dispersión & Cuadrantes Estratégicos")
     st.markdown("Evalúa la correlación entre métricas comerciales clave (ej. Descuentos vs Margen) y clasifica tu catálogo en cuadrantes de negocio.")
 
@@ -225,7 +225,7 @@ def render_scatter_analytics(df: pd.DataFrame, profiler_info: dict):
             margin=dict(l=20, r=20, t=30, b=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        st.plotly_chart(fig_scatter, width="stretch")
 
     # ==========================================
     # TAB 2: MATRIZ ESTRATÉGICA BCG
@@ -346,7 +346,7 @@ def render_scatter_analytics(df: pd.DataFrame, profiler_info: dict):
             margin=dict(l=20, r=20, t=30, b=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        st.plotly_chart(fig_bcg, use_container_width=True)
+        st.plotly_chart(fig_bcg, width="stretch")
 
         # Detalle de Acciones Tácticas por Cuadrante
         st.markdown("##### Detalle de Productos por Cuadrante")
@@ -369,6 +369,6 @@ def render_scatter_analytics(df: pd.DataFrame, profiler_info: dict):
                 'Utilidad Neta ($)': '${:,.2f}',
                 'Margen (%)': '{:.1f}%'
             }),
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )

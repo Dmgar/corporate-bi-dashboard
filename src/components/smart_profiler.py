@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import re
+from typing import Any
 
 class SmartProfiler:
     """
@@ -137,7 +137,15 @@ class SmartProfiler:
         }
 
     @staticmethod
-    def _generate_recommendations(df, date_cols, geo_cols, numeric_cols, categorical_cols, metrics, dimensions) -> list:
+    def _generate_recommendations(
+        df: pd.DataFrame,
+        date_cols: list[str],
+        geo_cols: dict[str, str | None],
+        numeric_cols: list[str],
+        categorical_cols: list[str],
+        metrics: dict[str, str | None],
+        dimensions: dict[str, str | None]
+    ) -> list[dict[str, Any]]:
         recs = []
         
         # Recomendación 1: Mapa Coroplético Territorial

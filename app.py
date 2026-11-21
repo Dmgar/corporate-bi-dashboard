@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 from typing import Optional, Any
 from src.db_client import DBClient
@@ -69,15 +68,16 @@ def load_default_data() -> pd.DataFrame:
 def process_file(uploaded_file: Any) -> Optional[pd.DataFrame]:
     """Carga y normaliza archivos subidos por el usuario de manera inteligente."""
     try:
-        if uploaded_file.name.endswith('.csv'):
+        filename_lower = uploaded_file.name.lower()
+        if filename_lower.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
-        elif uploaded_file.name.endswith(('.xls', '.xlsx')):
-            df = pd.read_excel(uploaded_file)
+        elif filename_lower.endswith('.xlsx'):
+            df = pd.read_excel(uploaded_file, engine='openpyxl')
         else:
-            st.error("Formato no soportado. Por favor sube un archivo CSV o Excel.")
+            st.error("Formato no soportado. Por favor sube un archivo CSV o Excel (.xlsx).")
             return None
-    except Exception as e:
-        st.error(f"Error al leer el archivo: {e}")
+    except Exception:
+        st.error("No se pudo leer el archivo. Verifica que sea un CSV o Excel (.xlsx) válido y no esté corrupto.")
         return None
     
     # Normalización de nombres de columnas
@@ -139,7 +139,11 @@ def render_insights(
         col2.info(f"**Producto Estrella:** **{top_product['product_name']}** lidera las utilidades globales con **${top_product['total_profit']:,.2f}**. ¡Asegura su inventario!", icon=":material/star:")
         
         # Insight 3: Oportunidad de Costos (Alto ingreso, bajo margen)
-        avg_margin = kpi_df['overall_margin'][0] if ('overall_margin' in kpi_df.columns and len(kpi_df) > 0) else products_df['margin_percentage'].mean()
+        avg_margin = (
+            float(kpi_df['overall_margin'].iloc[0])
+            if (kpi_df is not None and not kpi_df.empty and 'overall_margin' in kpi_df.columns and pd.notna(kpi_df['overall_margin'].iloc[0]))
+            else float(products_df['margin_percentage'].mean())
+        )
         revenue_threshold = products_df['total_revenue'].quantile(0.8)
         low_margin_products = products_df[(products_df['total_revenue'] >= revenue_threshold) & (products_df['margin_percentage'] < avg_margin)]
         
@@ -154,17 +158,15 @@ def main() -> None:
     
     # Sidebar: Carga y Conexión de Datos
     st.sidebar.header(":material/database: Origen de Datos")
-    uploaded_file = st.sidebar.file_uploader("Sube tu archivo (CSV o Excel)", type=['csv', 'xlsx', 'xls'])
+    uploaded_file = st.sidebar.file_uploader("Sube tu archivo (CSV o Excel .xlsx)", type=['csv', 'xlsx'])
     
     if uploaded_file:
         raw_df = process_file(uploaded_file)
         if raw_df is None: return
         st.sidebar.success(f"Archivo cargado: **{uploaded_file.name}** ({len(raw_df):,} registros)")
-        data_source_badge = f":material/upload_file: Archivo Subido: `{uploaded_file.name}`"
     else:
         raw_df = load_default_data()
         st.sidebar.info("Usando base de datos corporativa local (SQLite).")
-        data_source_badge = ":material/database: Base de Datos Local: `sales_database.db`"
 
     # Perfilado Inteligente del Conjunto de Datos
     profiler_info = SmartProfiler.profile_dataframe(raw_df)
@@ -177,7 +179,7 @@ def main() -> None:
     max_date = raw_df['date'].max() if ('date' in raw_df.columns and pd.api.types.is_datetime64_any_dtype(raw_df['date'])) else None
     
     start_date, end_date = None, None
-    if min_date and max_date:
+    if pd.notna(min_date) and pd.notna(max_date):
         date_range = st.sidebar.date_input(
             "Rango de Fechas",
             [min_date, max_date],
@@ -198,7 +200,7 @@ def main() -> None:
     sidebar_filtered = raw_df.copy()
     if start_date and end_date and 'date' in sidebar_filtered.columns:
         sidebar_filtered = sidebar_filtered[(sidebar_filtered['date'] >= pd.to_datetime(start_date)) & (sidebar_filtered['date'] <= pd.to_datetime(end_date))]
-    if selected_cats and 'category' in sidebar_filtered.columns:
+    if selected_cats is not None and 'category' in sidebar_filtered.columns:
         sidebar_filtered = sidebar_filtered[sidebar_filtered['category'].isin(selected_cats)]
 
     # ========================================================
@@ -327,7 +329,7 @@ def main() -> None:
                         template='plotly_white', color_discrete_sequence=['#118DFF']
                     )
                     fig_trend.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig_trend, use_container_width=True)
+                    st.plotly_chart(fig_trend, width="stretch")
                 else:
                     st.info("No hay datos de fecha suficientes para trazar la tendencia mensual.")
                     
@@ -342,7 +344,7 @@ def main() -> None:
                         template='plotly_white', color_discrete_sequence=['#118DFF', '#12239E', '#E66C37', '#00B7C3']
                     )
                     fig_prod.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig_prod, use_container_width=True)
+                    st.plotly_chart(fig_prod, width="stretch")
                 else:
                     st.info("Se requiere información de categoría y producto para mostrar el ranking de productos.")
         else:
@@ -363,7 +365,11 @@ def main() -> None:
             st.divider()
             
             st.subheader(":material/lightbulb: Insights del Producto")
-            avg_margin = kpi_df['overall_margin'][0] if ('overall_margin' in kpi_df.columns and len(kpi_df) > 0) else 25.0
+            avg_margin = (
+                float(kpi_df['overall_margin'].iloc[0])
+                if (kpi_df is not None and not kpi_df.empty and 'overall_margin' in kpi_df.columns and pd.notna(kpi_df['overall_margin'].iloc[0]))
+                else 25.0
+            )
             
             if prod_data['margin_percentage'] > avg_margin:
                 st.success(f"**Alta Rentabilidad:** Este producto supera el margen promedio del negocio ({avg_margin:.1f}%). Su venta es estratégica y muy favorable para las ganancias.", icon=":material/thumb_up:")
@@ -385,7 +391,7 @@ def main() -> None:
                         template='plotly_white', color_discrete_sequence=['#118DFF']
                     )
                     fig_prod_trend.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig_prod_trend, use_container_width=True)
+                    st.plotly_chart(fig_prod_trend, width="stretch")
 
     # ========================================================
     # TAB 2: MAPA COROPLÉTICO & GEOGRAFÍA

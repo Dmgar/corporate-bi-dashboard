@@ -8,52 +8,56 @@ class DBClient:
         self.db_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', db_path))
 
     def _read_sql_file(self, filename: str) -> str:
-        filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'sql', filename))
+        sql_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'sql'))
+        filepath = os.path.abspath(os.path.join(sql_dir, filename))
+        if os.path.commonpath([sql_dir, filepath]) != sql_dir:
+            raise ValueError(f"Ruta SQL no permitida fuera del directorio sql/: {filename}")
         with open(filepath, 'r', encoding='utf-8') as f:
             return f.read()
 
     def get_default_data(self) -> pd.DataFrame:
         """Loads data from the default SQLite db into a flattened Pandas DataFrame."""
         conn = sqlite3.connect(self.db_path)
-        
-        # Check available columns in stores table
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(stores)")
-        store_columns = [col[1] for col in cursor.fetchall()]
-        
-        geo_fields = []
-        if 'country' in store_columns:
-            geo_fields.append("st.country")
-        if 'country_code' in store_columns:
-            geo_fields.append("st.country_code")
-        if 'city' in store_columns:
-            geo_fields.append("st.city")
-        if 'lat' in store_columns and 'lon' in store_columns:
-            geo_fields.extend(["st.lat", "st.lon"])
-            
-        geo_clause = (", " + ", ".join(geo_fields)) if geo_fields else ""
+        try:
+            # Check available columns in stores table
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(stores)")
+            store_columns = [col[1] for col in cursor.fetchall()]
 
-        query = f"""
-        SELECT 
-            s.transaction_id,
-            s.date,
-            p.category,
-            p.product_name,
-            st.region,
-            st.channel,
-            c.segment,
-            s.quantity,
-            s.discount,
-            s.revenue,
-            s.cost,
-            s.profit{geo_clause}
-        FROM sales s
-        JOIN products p ON s.product_id = p.product_id
-        JOIN stores st ON s.store_id = st.store_id
-        JOIN customers c ON s.customer_id = c.customer_id
-        """
-        df = pd.read_sql_query(query, conn)
-        conn.close()
+            geo_fields = []
+            if 'country' in store_columns:
+                geo_fields.append("st.country")
+            if 'country_code' in store_columns:
+                geo_fields.append("st.country_code")
+            if 'city' in store_columns:
+                geo_fields.append("st.city")
+            if 'lat' in store_columns and 'lon' in store_columns:
+                geo_fields.extend(["st.lat", "st.lon"])
+
+            geo_clause = (", " + ", ".join(geo_fields)) if geo_fields else ""
+
+            query = f"""
+            SELECT 
+                s.transaction_id,
+                s.date,
+                p.category,
+                p.product_name,
+                st.region,
+                st.channel,
+                c.segment,
+                s.quantity,
+                s.discount,
+                s.revenue,
+                s.cost,
+                s.profit{geo_clause}
+            FROM sales s
+            JOIN products p ON s.product_id = p.product_id
+            JOIN stores st ON s.store_id = st.store_id
+            JOIN customers c ON s.customer_id = c.customer_id
+            """
+            df = pd.read_sql_query(query, conn)
+        finally:
+            conn.close()
         df['date'] = pd.to_datetime(df['date'])
 
         # Fallback if country is missing

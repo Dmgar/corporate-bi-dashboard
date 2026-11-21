@@ -1,11 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
-import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
 
-def render_smart_recommender(df: pd.DataFrame, profiler_info: dict):
+def render_smart_recommender(df: pd.DataFrame, profiler_info: dict) -> None:
     st.subheader(":material/auto_awesome: Motor de Recomendación de Visuales de Negocio")
     st.markdown("El sistema analiza la estructura de tus datos y te sugiere las visualizaciones más valiosas para la toma de decisiones estratégicas.")
 
@@ -51,9 +49,10 @@ def render_smart_recommender(df: pd.DataFrame, profiler_info: dict):
                                 f":material/arrow_forward: {btn_label}",
                                 key=f"btn_rec_{rec['id']}",
                                 help=f"Ve a la pestaña '{rec['suggested_view']}' en la barra superior para interactuar con este análisis.",
-                                use_container_width=True
+                                width="stretch"
                             ):
-                                target_idx = rec.get('target_tab_index', 0)
+                                raw_idx = rec.get('target_tab_index', 0)
+                                target_idx = int(raw_idx) if isinstance(raw_idx, int) and raw_idx >= 0 else 0
                                 js_nav = f"""
                                 <script>
                                     const tabs = window.parent.document.querySelectorAll('button[data-baseweb="tab"]');
@@ -79,7 +78,7 @@ def render_smart_recommender(df: pd.DataFrame, profiler_info: dict):
         
         total_rev = pareto_df[rev_col].sum()
         pareto_df['cum_rev'] = pareto_df[rev_col].cumsum()
-        pareto_df['cum_pct'] = (pareto_df['cum_rev'] / total_rev) * 100
+        pareto_df['cum_pct'] = ((pareto_df['cum_rev'] / total_rev) * 100) if total_rev != 0 else 0.0
         pareto_df['rank'] = pareto_df.index + 1
         pareto_df['rank_pct'] = (pareto_df['rank'] / len(pareto_df)) * 100
 
@@ -144,6 +143,6 @@ def render_smart_recommender(df: pd.DataFrame, profiler_info: dict):
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                 margin=dict(l=20, r=20, t=40, b=20)
             )
-            st.plotly_chart(fig_pareto, use_container_width=True)
+            st.plotly_chart(fig_pareto, width="stretch")
     else:
         st.info("Se requiere una columna de producto/categoría e ingresos para trazar la curva de Pareto.")

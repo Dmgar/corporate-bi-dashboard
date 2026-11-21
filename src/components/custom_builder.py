@@ -1,9 +1,22 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
-def render_custom_builder(df: pd.DataFrame, profiler_info: dict):
+_CSV_FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
+
+
+def sanitize_csv_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Neutraliza prefijos de fórmulas en celdas de texto para prevenir CSV Formula Injection."""
+    safe_df = df.copy()
+    for col in safe_df.columns:
+        if pd.api.types.is_string_dtype(safe_df[col]) or safe_df[col].dtype == object:
+            safe_df[col] = safe_df[col].map(
+                lambda v: f"'{v}" if isinstance(v, str) and v.startswith(_CSV_FORMULA_PREFIXES) else v
+            )
+    return safe_df
+
+
+def render_custom_builder(df: pd.DataFrame, profiler_info: dict) -> None:
     st.subheader(":material/palette: Estudio de Visuales & Constructor Libre")
     st.markdown("Diseña y personaliza tus propios gráficos interactivos a partir de cualquier columna de tu base de datos.")
 
@@ -204,12 +217,13 @@ def render_custom_builder(df: pd.DataFrame, profiler_info: dict):
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=20, r=20, t=30, b=20)
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # Descarga de datos
     with st.expander(":material/download: Ver y Exportar Datos de este Gráfico"):
-        st.dataframe(grouped if 'grouped' in locals() else chart_df.head(100), use_container_width=True)
-        csv_data = (grouped if 'grouped' in locals() else chart_df).to_csv(index=False).encode('utf-8')
+        export_df = grouped if 'grouped' in locals() else chart_df
+        st.dataframe(export_df if 'grouped' in locals() else chart_df.head(100), width="stretch")
+        csv_data = sanitize_csv_dataframe(export_df).to_csv(index=False).encode('utf-8')
         st.download_button(
             label=":material/file_download: Descargar Resumen en CSV",
             data=csv_data,

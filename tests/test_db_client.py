@@ -64,3 +64,11 @@ def test_db_client_invalid_path(tmp_path: Path) -> None:
     with pytest.raises(sqlite3.OperationalError):
         client.get_default_data()
 
+
+def test_read_sql_file_blocks_path_traversal() -> None:
+    """_read_sql_file must reject paths escaping the sql/ directory."""
+    client = DBClient()
+    with pytest.raises(ValueError):
+        client._read_sql_file("../app.py")
+
+

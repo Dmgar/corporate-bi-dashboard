@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
-def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
+def render_geo_analytics(df: pd.DataFrame, profiler_info: dict) -> None:
     if df is None or df.empty:
         st.info("No hay transacciones geográficas disponibles para los filtros seleccionados.", icon=":material/info:")
         return
@@ -63,6 +62,10 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
         if num_col not in numeric_options.values() and num_col not in ['transaction_id', 'id', 'lat', 'lon']:
             numeric_options[num_col.replace('_', ' ').title()] = num_col
 
+    if not numeric_options:
+        st.warning("No se encontraron columnas numéricas para visualizar métricas en el mapa geográfico.")
+        return
+
     with col_ctrl2:
         metric_label = st.selectbox("Métrica a Visualizar", list(numeric_options.keys()))
         selected_metric_col = numeric_options[metric_label]
@@ -116,8 +119,9 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
     if prof_col and prof_col != selected_metric_col:
         agg_dict[prof_col] = 'sum'
         
-    geo_summary = df.groupby(selected_geo_col).agg(agg_dict).reset_index()
-    geo_summary['transactions_count'] = df.groupby(selected_geo_col).size().values
+    grouped_geo = df.groupby(selected_geo_col)
+    geo_summary = grouped_geo.agg(agg_dict).reset_index()
+    geo_summary['transactions_count'] = grouped_geo.size().to_numpy()
     
     # Calcular Margen % si disponemos de revenue y profit
     if rev_col and prof_col and rev_col in geo_summary.columns and prof_col in geo_summary.columns:
@@ -226,9 +230,9 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
                     lenmode="pixels", len=260
                 )
             )
-            st.plotly_chart(fig_map, use_container_width=True)
-        except Exception as e:
-            st.info(f"No fue posible proyectar las formas poligonales con los nombres de la columna seleccionada ({e}). Alternando automáticamente al mapa de barras/burbujas territoriales.")
+            st.plotly_chart(fig_map, width="stretch")
+        except Exception:
+            st.info("No fue posible proyectar las formas poligonales con los nombres de la columna seleccionada. Alternando automáticamente al gráfico de barras territoriales.")
             fig_bar = px.bar(
                 geo_summary.sort_values(selected_metric_col, ascending=False),
                 x=selected_geo_col,
@@ -238,7 +242,7 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
                 labels={selected_metric_col: metric_label, selected_geo_col: 'Territorio'},
                 template='plotly_white'
             )
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.plotly_chart(fig_bar, width="stretch")
 
     with tab_map2:
         # Si hay lat y lon en el dataset original
@@ -260,7 +264,7 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
             )
             fig_bubble.update_geos(showcountries=True, countrycolor="#CCCCCC", showland=True, landcolor="#F9F9FB")
             fig_bubble.update_layout(margin={"r": 0, "t": 20, "l": 0, "b": 0}, paper_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig_bubble, use_container_width=True)
+            st.plotly_chart(fig_bubble, width="stretch")
         else:
             # Burbujas usando los nombres de países
             geo_summary['bubble_size'] = geo_summary[selected_metric_col].clip(lower=0)
@@ -278,35 +282,41 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
             )
             fig_bubble.update_geos(showcountries=True, countrycolor="#CCCCCC", showland=True, landcolor="#F9F9FB")
             fig_bubble.update_layout(margin={"r": 0, "t": 20, "l": 0, "b": 0}, paper_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig_bubble, use_container_width=True)
+            st.plotly_chart(fig_bubble, width="stretch")
 
     # Ranking Territorial
     st.divider()
     st.subheader(":material/leaderboard: Ranking y Participación por Territorio")
     geo_ranking = geo_summary.sort_values(selected_metric_col, ascending=False).copy()
-    geo_ranking['share_pct'] = (geo_ranking[selected_metric_col] / total_val * 100).round(2)
+    geo_ranking['share_pct'] = (
+        (geo_ranking[selected_metric_col] / total_val * 100).round(2)
+        if total_val != 0
+        else 0.0
+    )
     
     col_rank_tbl, col_rank_chart = st.columns([3, 2])
     with col_rank_tbl:
         display_cols = [selected_geo_col, selected_metric_col, 'share_pct', 'transactions_count']
         if 'margin_pct' in geo_ranking.columns:
             display_cols.append('margin_pct')
-            
+
+        rename_map = {
+            selected_geo_col: 'Territorio',
+            selected_metric_col: metric_label,
+            'share_pct': 'Cuota de Mercado (%)',
+            'transactions_count': 'N° Transacciones',
+            'margin_pct': 'Margen Rentabilidad (%)'
+        }
+        renamed_ranking = geo_ranking[display_cols].rename(columns=rename_map)
         format_dict = {
-            selected_metric_col: "${:,.2f}" if "($)" in metric_label else "{:,.0f}",
-            'share_pct': "{:.2f}%",
-            'transactions_count': "{:,}",
-            'margin_pct': "{:.1f}%"
+            metric_label: "${:,.2f}" if "($)" in metric_label else "{:,.0f}",
+            'Cuota de Mercado (%)': "{:.2f}%",
+            'N° Transacciones': "{:,}",
+            'Margen Rentabilidad (%)': "{:.1f}%"
         }
         st.dataframe(
-            geo_ranking[display_cols].rename(columns={
-                selected_geo_col: 'Territorio',
-                selected_metric_col: metric_label,
-                'share_pct': 'Cuota de Mercado (%)',
-                'transactions_count': 'N° Transacciones',
-                'margin_pct': 'Margen Rentabilidad (%)'
-            }).style.format({k: v for k, v in format_dict.items() if k in display_cols}),
-            use_container_width=True,
+            renamed_ranking.style.format({k: v for k, v in format_dict.items() if k in renamed_ranking.columns}),
+            width="stretch",
             hide_index=True
         )
 
@@ -325,4 +335,4 @@ def render_geo_analytics(df: pd.DataFrame, profiler_info: dict):
             paper_bgcolor='rgba(0,0,0,0)',
             showlegend=True
         )
-        st.plotly_chart(fig_donut, use_container_width=True)
+        st.plotly_chart(fig_donut, width="stretch")

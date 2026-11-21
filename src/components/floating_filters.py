@@ -62,7 +62,6 @@ def render_floating_filters(df: pd.DataFrame, profiler_info: dict) -> pd.DataFra
         # Píldoras de Rango de Fecha Rápido si hay columna de fecha
         if date_col and pd.api.types.is_datetime64_any_dtype(df[date_col]):
             max_dt = df[date_col].max()
-            min_dt = df[date_col].min()
             
             pills_options = ["Todo", "Último Año", "Último Trimestre", "Últimos 30 días"]
             selected_pill = st.pills(
@@ -86,7 +85,7 @@ def render_floating_filters(df: pd.DataFrame, profiler_info: dict) -> pd.DataFra
 
     with col_bar_popover:
         # Popover flotante para filtros detallados
-        with st.popover(":material/tune: Filtros Flotantes", use_container_width=True):
+        with st.popover(":material/tune: Filtros Flotantes", width="stretch"):
             st.markdown("##### :material/filter_alt: Filtros Rápidos de Negocio")
             
             def sync_multiselect_state(key: str, unique_vals: list):
@@ -107,7 +106,7 @@ def render_floating_filters(df: pd.DataFrame, profiler_info: dict) -> pd.DataFra
                     options=unique_cats,
                     key="floating_sel_cats"
                 )
-                if selected_cats:
+                if selected_cats is not None:
                     filtered_df = filtered_df[filtered_df[cat_col].isin(selected_cats)]
 
             # Filtro por Territorio
@@ -120,7 +119,7 @@ def render_floating_filters(df: pd.DataFrame, profiler_info: dict) -> pd.DataFra
                     options=unique_geos,
                     key="floating_sel_geos"
                 )
-                if selected_geos:
+                if selected_geos is not None:
                     filtered_df = filtered_df[filtered_df[geo_col].isin(selected_geos)]
 
             # Filtro por Canal
@@ -133,7 +132,7 @@ def render_floating_filters(df: pd.DataFrame, profiler_info: dict) -> pd.DataFra
                     options=unique_chans,
                     key="floating_sel_chans"
                 )
-                if selected_chans:
+                if selected_chans is not None:
                     filtered_df = filtered_df[filtered_df[chan_col].isin(selected_chans)]
 
             # Filtro por Segmento
@@ -146,11 +145,11 @@ def render_floating_filters(df: pd.DataFrame, profiler_info: dict) -> pd.DataFra
                     options=unique_segs,
                     key="floating_sel_segs"
                 )
-                if selected_segs:
+                if selected_segs is not None:
                     filtered_df = filtered_df[filtered_df[seg_col].isin(selected_segs)]
 
     with col_bar_reset:
-        if st.button(":material/refresh: Limpiar", use_container_width=True, help="Restablece todos los filtros aplicados"):
+        if st.button(":material/refresh: Limpiar", width="stretch", help="Restablece todos los filtros aplicados"):
             st.session_state.quick_date_filter = "Todo"
             if 'floating_sel_cats' in st.session_state: del st.session_state['floating_sel_cats']
             if 'floating_sel_geos' in st.session_state: del st.session_state['floating_sel_geos']

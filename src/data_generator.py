@@ -1,12 +1,17 @@
 import sqlite3
+from pathlib import Path
+from typing import Optional
 import pandas as pd
 from faker import Faker
 import random
 from datetime import datetime, timedelta
 
-fake = Faker('es_MX')
 
-def generate_data(num_sales=50000):
+def generate_data(num_sales: int = 50000, seed: Optional[int] = 42, db_path: Optional[str] = None) -> Path:
+    if seed is not None:
+        random.seed(seed)
+        Faker.seed(seed)
+    fake = Faker('es_MX')
     print("Iniciando generación de datos...")
     
     # 1. Categories and Products
@@ -128,15 +133,20 @@ def generate_data(num_sales=50000):
     df_sales = pd.DataFrame(sales)
     
     # Export to SQLite
-    print("Guardando datos en data/sales_database.db...")
-    conn = sqlite3.connect('data/sales_database.db')
-    df_products.to_sql('products', conn, if_exists='replace', index=False)
-    df_stores.to_sql('stores', conn, if_exists='replace', index=False)
-    df_customers.to_sql('customers', conn, if_exists='replace', index=False)
-    df_sales.to_sql('sales', conn, if_exists='replace', index=False)
-    conn.close()
-    
-    print("Base de datos generada exitosamente en 'data/sales_database.db'")
+    target_path = Path(db_path) if db_path else Path(__file__).resolve().parent.parent / 'data' / 'sales_database.db'
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Guardando datos en {target_path}...")
+    conn = sqlite3.connect(str(target_path))
+    try:
+        df_products.to_sql('products', conn, if_exists='replace', index=False)
+        df_stores.to_sql('stores', conn, if_exists='replace', index=False)
+        df_customers.to_sql('customers', conn, if_exists='replace', index=False)
+        df_sales.to_sql('sales', conn, if_exists='replace', index=False)
+    finally:
+        conn.close()
+
+    print(f"Base de datos generada exitosamente en '{target_path}'")
+    return target_path
 
 if __name__ == "__main__":
     generate_data(100000)
